@@ -2,15 +2,14 @@
 import streamlit as st
 import pandas as pd
 import pickle
-#from pycaret.classification import *
+from pycaret.classification import *
 # Function to load a model
-def load_model(model_name):
-    with open(model_name, 'rb') as file:
-        return pickle.load(file)
+# def load_model(model_name):
+#     with open(model_name, 'rb') as file:
+#         return pickle.load(file)
 
 # Function to get user input for loan default prediction
 def get_loan_default_input():
-    # Define your features here
 
     region = st.selectbox("Select your region",['AFRICA', 'AFRICA EAST', 'AFRICA WEST', 'EAST ASIA AND PACIFIC',
        'EASTERN AND SOUTHERN AFRICA', 'EUROPE AND CENTRAL ASIA',
@@ -46,52 +45,58 @@ def get_loan_default_input():
        'SCP EUR', 'SCP USD', 'SCPD', 'SCPM', 'SNGL CRNCY'])
 
     interestR = st.number_input("InterestRate", min_value=0.0, max_value=100.0)
-    # Add more features as needed
     # ...
 
-    PrincipalA = st.number_input("Original Principal Amount", min_value=0.0, max_value=100.0)
+    PrincipalA = st.number_input("Original Principal Amount", min_value=0.0, max_value=1000000000000.0)
 
-    return pd.DataFrame([[region, Country, Borrower, Gaurantor, LoanTy, interestR, PrincipalA]], columns=['Region', 'Country', 'Borrower', 'Guarantor', 'Loan Type',
-        'Interest Rate', 
-       'Original Principal Amount'])
+    return pd.DataFrame([[region, Country, Borrower, Gaurantor, LoanTy, interestR, PrincipalA]],
+                         columns=['Region', 'Country', 'Borrower', 'Guarantor', 'Loan Type', 'Interest Rate', 'Original Principal Amount'])
  
-# Similarly define functions for claim predictions and spam filtering inputs
 # ...
 
-# Streamlit app
 def main():
     st.sidebar.title("Select Task")
     task = st.sidebar.selectbox("Choose a task",
-                                ["Loan Default Prediction",
+                                ["Loan Disbursement Prediction",
                                  "Claim Prediction",
                                  "Spam Filtering"])
 
     st.title("Machine Learning Catalogue Models")
 
-    if task == "Loan Default Prediction":
+    if task == "Loan Disbursement Prediction":
         user_input = get_loan_default_input()
-        model = load_model('loan_default_model.pkl')
+        #setup()
+
+        model = load_model('loan_default_model')
         if st.button('Predict'):
-            prediction = predict_model(user_input)
-            st.write(f"Prediction: {prediction[0]}")
+            prediction = predict_model(model, user_input)
+            prediction = prediction["prediction_label"][0]
+            if prediction == 0:
+                st.write("The loan is likely to be cancelled")
+            else:
+                st.write("The loan is likely to be approved and fully disbursed")
 
 
     elif task == "Spam Filtering":
             # Textbox for user input
         user_input = st.text_area("Enter text:")
+        user_input = [user_input]
+        with open('spam_model.pkl', 'rb') as model_file:
+            model = pickle.load(model_file)
     
     # Check for Spam button
         if st.button("Check for Spam"):
-            if is_spam(user_input):
+            predict1 =  model.predict(user_input)
+            if predict1 == 1:
                 st.warning("This text might be spam!")
             else:
                 st.success("This text is not spam.")
-       # user_input = get_claim_prediction_input()
-                model = load_model('claim_prediction_model.pkl')
+       # 
+          #      
 
-    elif task == "Claim Prediction":
-        user_input = get_spam_filtering_input()
-        model = load_model('spam_filter_model.pkl')
+   # elif task == "Claim Prediction":
+     #   user_input = get_claim_prediction_input()
+       # model = model = load_model('claim_prediction_model.pkl')
 
     # if st.button('Predict'):
     #     prediction = model.predict(user_input)
